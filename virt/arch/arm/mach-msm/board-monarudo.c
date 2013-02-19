@@ -4661,16 +4661,16 @@ static void __init monarudo_common_init(void)
 	if (socinfo_init() < 0)
 		pr_err("socinfo_init() failed!\n");
 
-	pr_info("%s: platform_subtype = %d\r\n", __func__,
+	printk(KERN INFO "%s: platform_subtype = %d\r\n", __func__,
 		socinfo_get_platform_subtype());
-	pr_info("%s: socinf version = %u.%u\r\n", __func__,
+	printk(KERN_INFO "%s: socinf version = %u.%u\r\n", __func__,
 		SOCINFO_VERSION_MAJOR(socinfo_get_version()),
 		SOCINFO_VERSION_MINOR(socinfo_get_version()));
 
 	BUG_ON(msm_rpm_init(&apq8064_rpm_data));
 	BUG_ON(msm_rpmrs_levels_init(&msm_rpmrs_data));
 	msm_rpmrs_lpm_init(1, 1, 1, 1);
-	regulator_suppress_info_printing();
+//	regulator_suppress_info_printing();
 	platform_device_register(&monarudo_device_rpm_regulator);
 	if (msm_xo_init())
 		pr_err("Failed to initialize XO votes\n");
