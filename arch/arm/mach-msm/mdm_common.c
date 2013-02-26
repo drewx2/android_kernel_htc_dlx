@@ -186,14 +186,14 @@ long mdm_modem_ioctl(struct file *filp, unsigned int cmd,
 	int status, ret = 0;
 
 	if (_IOC_TYPE(cmd) != CHARM_CODE) {
-		pr_err("%s: invalid ioctl code\n", __func__);
+		printk(KERN_ERR "%s: invalid ioctl code\n", __func__);
 		return -EINVAL;
 	}
 
-	pr_debug("%s: Entering ioctl cmd = %d\n", __func__, _IOC_NR(cmd));
+	printk(KERN_INFO "%s: Entering ioctl cmd = %d\n", __func__, _IOC_NR(cmd));
 	switch (cmd) {
 	case WAKE_CHARM:
-		pr_info("%s: Powering on mdm\n", __func__);
+		printk(KERN_INFO "%s: Powering on mdm\n", __func__);
 		mdm_drv->mdm_ready = 0;	/* HTC added for the MDM reloading for the /dev/ttyUSB0 node checking failed situation */
 		mdm_drv->ops->power_on_mdm_cb(mdm_drv);
 		break;
@@ -309,14 +309,14 @@ static int set_mdm_errmsg(void __user *msg)
 		return -EFAULT;
 	}
 	modem_errmsg[MODEM_ERRMSG_LEN-1] = '\0';
-	pr_info("%s: set modem errmsg: %s\n", __func__, modem_errmsg);
+	printk(KERN_INFO "%s: set modem errmsg: %s\n", __func__, modem_errmsg);
 	return 0;
 }
 
 char *get_mdm_errmsg(void)
 {
 	if (strlen(modem_errmsg) <= 0) {
-		pr_err("%s: can not get mdm errmsg.\n", __func__);
+		printk(KERN_ERR "%s: can not get mdm errmsg.\n", __func__);
 		return NULL;
 	}
 	return modem_errmsg;
@@ -344,7 +344,7 @@ static void mdm_fatal_fn(struct work_struct *work)
 		for (i = HTC_MDM_ERROR_CONFIRM_TIME_MS; i > 0; i--) {
 			msleep(1);
 			if (gpio_get_value(mdm_drv->mdm2ap_errfatal_gpio) == 0) {
-				pr_info("%s: mdm fatal high %d(ms) confirm failed... Abort!\n", __func__, HTC_MDM_ERROR_CONFIRM_TIME_MS);
+				printk(KERN_INFO "%s: mdm fatal high %d(ms) confirm failed... Abort!\n", __func__, HTC_MDM_ERROR_CONFIRM_TIME_MS);
 				return;
 			}
 		}
@@ -359,7 +359,7 @@ static void mdm_fatal_fn(struct work_struct *work)
 		set_mdm2ap_errfatal_restart_flag(1);
 	/* HTC add end */
 
-	pr_info("%s: Reseting the mdm due to an errfatal\n", __func__);
+	printk(KERN_INFO "%s: Reseting the mdm due to an errfatal\n", __func__);
 
 	subsystem_restart(EXTERNAL_MODEM);
 }
@@ -379,7 +379,7 @@ static void mdm_status_fn(struct work_struct *work)
 		for (i = HTC_MDM_ERROR_CONFIRM_TIME_MS; i > 0; i--) {
 			msleep(1);
 			if (gpio_get_value(mdm_drv->mdm2ap_status_gpio) == 1) {
-				pr_info("%s: mdm status low %d(ms) confirm failed... Abort!\n", __func__, HTC_MDM_ERROR_CONFIRM_TIME_MS);
+				printk(KERN_INFO "%s: mdm status low %d(ms) confirm failed... Abort!\n", __func__, HTC_MDM_ERROR_CONFIRM_TIME_MS);
 				return;
 			}
 		}
@@ -405,7 +405,7 @@ static void mdm_status_fn(struct work_struct *work)
 
 		subsystem_restart(EXTERNAL_MODEM);
 	} else if (value == 1) {
-		pr_info("%s: status = 1: mdm is now ready\n", __func__);
+		printk(KERN_INFO "%s: status = 1: mdm is now ready\n", __func__);
 	}
 }
 
