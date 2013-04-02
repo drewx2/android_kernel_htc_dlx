@@ -30,6 +30,7 @@
 #define ACOUSTIC_GET_HTC_REVISION	_IOW(ACOUSTIC_IOCTL_MAGIC, 44, unsigned)
 #define ACOUSTIC_GET_HW_COMPONENT	_IOW(ACOUSTIC_IOCTL_MAGIC, 45, unsigned)
 #define ACOUSTIC_GET_DMIC_INFO   	_IOW(ACOUSTIC_IOCTL_MAGIC, 46, unsigned)
+#define ACOUSTIC_UPDATE_BEATS_STATUS	_IOW(ACOUSTIC_IOCTL_MAGIC, 47, unsigned)
 #define ACOUSTIC_RAMDUMP		_IOW(ACOUSTIC_IOCTL_MAGIC, 99, unsigned)
 #define D(fmt, args...) printk(KERN_INFO "[AUD] htc-acoustic: "fmt, ##args)
 #define E(fmt, args...) printk(KERN_ERR "[AUD] htc-acoustic: "fmt, ##args)
@@ -37,6 +38,7 @@
 static struct mutex api_lock;
 static struct acoustic_ops default_acoustic_ops;
 static struct acoustic_ops *the_ops = &default_acoustic_ops;
+static struct switch_dev sdev_beats;
 
 void acoustic_register_ops(struct acoustic_ops *ops)
 {
@@ -113,6 +115,24 @@ acoustic_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rc = -EINVAL;
 		}
                 break;
+	case ACOUSTIC_UPDATE_BEATS_STATUS: {
+		int new_state = -1;
+
+		if (copy_from_user(&new_state, (void *)arg, sizeof(new_state))) {
+			rc = -EFAULT;
+			break;
+		}
+		D("Update Beats Status : %d\n", new_state);
+		if (new_state < -1 || new_state > 1) {
+			E("Invalid Beats status update");
+			rc = -EINVAL;
+			break;
+		}
+
+		sdev_beats.state = -1;
+		switch_set_state(&sdev_beats, new_state);
+		break;
+	}
        case ACOUSTIC_RAMDUMP:
 		pr_err("trigger ramdump by user space\n");
 		if (copy_from_user(&mode, (void *)arg, sizeof(mode))) {
@@ -130,6 +150,11 @@ acoustic_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	}
 	mutex_unlock(&api_lock);
 	return rc;
+}
+
+static ssize_t beats_print_name(struct switch_dev *sdev, char *buf)
+{
+	return sprintf(buf, "Beats\n");
 }
 
 static struct file_operations acoustic_fops = {
@@ -156,6 +181,14 @@ static int __init acoustic_init(void)
 		return ret;
 	}
 
+	sdev_beats.name = "Beats";
+	sdev_beats.print_name = beats_print_name;
+
+	ret = switch_dev_register(&sdev_beats);
+	if (ret < 0) {
+		pr_err("failed to register beats switch device!\n");
+		return ret;
+	}
 	return 0;
 }
 
