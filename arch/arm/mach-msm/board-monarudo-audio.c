@@ -72,9 +72,11 @@ static struct q6asm_ops qops = {
 	.get_q6_effect = apq8064_get_q6_effect_mode,
 };
 
+#if 0
 static struct msm_pcm_routing_ops rops = {
 	.get_q6_effect = apq8064_get_q6_effect_mode,
 };
+#endif
 
 static int __init monarudo_audio_init(void)
 {
@@ -94,7 +96,7 @@ static int __init monarudo_audio_init(void)
 	gpio_tlmm_config(audio_i2s_table[2], GPIO_CFG_DISABLE);
 
 	htc_register_q6asm_ops(&qops);
-	htc_register_pcm_routing_ops(&rops);
+//	msm_pcm_routing_ops(&rops);
 	acoustic_register_ops(&acoustic);
 	return ret;
 

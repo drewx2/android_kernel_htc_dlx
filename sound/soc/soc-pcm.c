@@ -2031,8 +2031,8 @@ int soc_dpcm_runtime_update(struct snd_soc_dapm_widget *widget)
 
 		paths = fe_path_get(fe, SNDRV_PCM_STREAM_PLAYBACK, &list);
 		if (paths < 0) {
-			//v_warn(fe->dev, "%s no valid %s route from source to sink\n",
-			//	fe->dai_link->name,  "playback");
+			dev_warn(fe->dev, "%s no valid %s route from source to sink\n",
+					fe->dai_link->name,  "playback");
 			ret = paths;
 			goto out;
 		}
@@ -2061,8 +2061,8 @@ capture:
 
 		paths = fe_path_get(fe, SNDRV_PCM_STREAM_CAPTURE, &list);
 		if (paths < 0) {
-			//dev_warn(fe->dev, "%s no valid %s route from source to sink\n",
-			//		fe->dai_link->name,  "capture");
+			dev_warn(fe->dev, "%s no valid %s route from source to sink\n",
+					fe->dai_link->name,  "capture");
 			ret = paths;
 			goto out;
 		}

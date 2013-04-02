@@ -1435,7 +1435,7 @@ int q6asm_open_write(struct audio_client *ac, uint32_t format)
 	open.post_proc_top = get_asm_topology();
 	if (open.post_proc_top == 0)
 		open.post_proc_top = DEFAULT_POPP_TOPOLOGY;
-
+#if 0
 	/* change to HTC_POPP_TOPOLOGY to support Q6 effect */
 	if (qops->get_q6_effect) {
 		int mode = qops->get_q6_effect();
@@ -1445,7 +1445,7 @@ int q6asm_open_write(struct audio_client *ac, uint32_t format)
 			open.post_proc_top = HTC_POPP_TOPOLOGY;
 		}
 	}
-
+#endif
 	switch (format) {
 	case FORMAT_LINEAR_PCM:
 		open.format = LINEAR_PCM;

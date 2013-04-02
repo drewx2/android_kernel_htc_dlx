@@ -31,13 +31,6 @@
 #include "msm-pcm-routing.h"
 #include "qdsp6/q6voice.h"
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 struct msm_pcm_routing_bdai_data {
 	u16 port_id; /* AFE port ID */
 	u8 active; /* track if this backend is enabled */
@@ -81,10 +74,11 @@ static const DECLARE_TLV_DB_LINEAR(multimedia2_rx_vol_gain, 0,
 static int msm_route_compressed_vol_control;
 static const DECLARE_TLV_DB_LINEAR(compressed_rx_vol_gain, 0,
 			INT_RX_VOL_MAX_STEPS);
-
+#if 0
 static int msm_route_compressed2_vol_control;
 static const DECLARE_TLV_DB_LINEAR(compressed2_rx_vol_gain, 0,
 			INT_RX_VOL_MAX_STEPS);
+#endif
 static int msm_route_ec_ref_rx;
 
 /* Equal to Frontend after last of the MULTIMEDIA SESSIONS */
@@ -225,6 +219,7 @@ static int fe_dai_map[MSM_FRONTEND_DAI_MM_SIZE][2] = {
 
 };
 
+#if 0
 static struct msm_pcm_routing_ops default_rops;
 static struct msm_pcm_routing_ops *rops = &default_rops;
 
@@ -232,6 +227,7 @@ void htc_register_pcm_routing_ops(struct msm_pcm_routing_ops *ops)
 {
 	rops = ops;
 }
+#endif
 
 static uint8_t is_be_dai_extproc(int be_dai)
 {
@@ -335,7 +331,7 @@ void msm_pcm_routing_reg_phy_stream(int fedai_id, int dspst_id, int stream_type)
 	}
 
 	mutex_lock(&routing_lock);
-
+#if 0
 	/* change to HTC_COPP_TOPOLOGY to support Q6 effect */
 	if (rops->get_q6_effect) {
 		if (rops->get_q6_effect() == 1) { /* COPP */
@@ -344,7 +340,7 @@ void msm_pcm_routing_reg_phy_stream(int fedai_id, int dspst_id, int stream_type)
 			topology = HTC_COPP_TOPOLOGY;
 		}
 	}
-
+#endif
 	payload.num_copps = 0; /* only RX needs to use payload */
 	fe_dai_map[fedai_id][session_type] = dspst_id;
 	/* re-enable EQ if active */
@@ -461,6 +457,7 @@ static void msm_pcm_routing_process_audio(u16 reg, u16 val, int set)
 	mutex_lock(&routing_lock);
 
 	if (set) {
+#if 0
 		/* change to HTC_COPP_TOPOLOGY to support Q6 effect */
 		if (rops->get_q6_effect) {
 			if (rops->get_q6_effect() == 1) { /* COPP */
@@ -469,7 +466,7 @@ static void msm_pcm_routing_process_audio(u16 reg, u16 val, int set)
 				topology = HTC_COPP_TOPOLOGY;
 			}
 		}
-
+#endif
 		if (!test_bit(val, &msm_bedais[reg].fe_sessions) &&
 			(msm_bedais[reg].port_id == VOICE_PLAYBACK_TX))
 			voc_start_playback(set);
@@ -860,6 +857,7 @@ static int msm_routing_set_compressed_vol_mixer(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+#if 0
 static int msm_routing_get_compressed2_vol_mixer(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -875,6 +873,7 @@ static int msm_routing_set_compressed2_vol_mixer(struct snd_kcontrol *kcontrol,
 			ucontrol->value.integer.value[0];
 	return 0;
 }
+#endif
 
 static int msm_routing_get_srs_trumedia_control(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
@@ -1845,13 +1844,13 @@ static const struct snd_kcontrol_new compressed_vol_mixer_controls[] = {
 	INT_RX_VOL_GAIN, 0, msm_routing_get_compressed_vol_mixer,
 	msm_routing_set_compressed_vol_mixer, compressed_rx_vol_gain),
 };
-
+#if 0
 static const struct snd_kcontrol_new compressed2_vol_mixer_controls[] = {
 	SOC_SINGLE_EXT_TLV("COMPRESSED2 RX Volume", SND_SOC_NOPM, 0,
 	INT_RX_VOL_GAIN, 0, msm_routing_get_compressed2_vol_mixer,
 	msm_routing_set_compressed2_vol_mixer, compressed2_rx_vol_gain),
 };
-
+#endif
 static const struct snd_kcontrol_new lpa_SRS_trumedia_controls[] = {
 	{.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
 	.name = "SRS TruMedia",
@@ -2699,7 +2698,7 @@ static int msm_pcm_routing_close(struct snd_pcm_substream *substream)
 
 	return 0;
 }
-
+#if 0
 int msm_pcm_routing_get_port(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -2714,6 +2713,7 @@ int msm_pcm_routing_get_port(struct snd_pcm_substream *substream)
 	bedai = &msm_bedais[be_id];
 	return bedai->port_id;
 }
+#endif
 
 static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 {
@@ -2750,7 +2750,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 	* is started.
 	*/
 	bedai->active = 1;
-
+#if 0
 	/* change to HTC_COPP_TOPOLOGY to support Q6 effect */
 	if (rops->get_q6_effect) {
 		if (rops->get_q6_effect() == 1) { /* COPP */
@@ -2759,7 +2759,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 			topology = HTC_COPP_TOPOLOGY;
 		}
 	}
-
+#endif
 	for_each_set_bit(i, &bedai->fe_sessions, MSM_FRONTEND_DAI_MM_SIZE) {
 		if (fe_dai_map[i][session_type] != INVALID_SESSION) {
 
@@ -2850,10 +2850,11 @@ static int msm_routing_probe(struct snd_soc_platform *platform)
 	snd_soc_add_platform_controls(platform,
 				compressed_vol_mixer_controls,
 			ARRAY_SIZE(compressed_vol_mixer_controls));
+#if 0
 	snd_soc_add_platform_controls(platform,
 				compressed2_vol_mixer_controls,
 			ARRAY_SIZE(compressed2_vol_mixer_controls));
-
+#endif
 	snd_soc_add_platform_controls(platform,
 				lpa_SRS_trumedia_controls,
 			ARRAY_SIZE(lpa_SRS_trumedia_controls));
