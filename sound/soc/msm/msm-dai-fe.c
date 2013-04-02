@@ -20,13 +20,6 @@
 #include <sound/pcm.h>
 #include <sound/soc.h>
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 static struct snd_soc_dai_ops msm_fe_dai_ops = {};
 
 /* Conventional and unconventional sample rate supported */
@@ -349,32 +342,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.ops = &msm_fe_dai_ops,
 		.name = "HDMI_HOSTLESS"
 	},
-//HTC_AUD +++
-	{
-		.playback = {
-			.stream_name = "PRI_I2S_HOSTLESS Playback",
-			.aif_name = "PRI_I2S_DL_HL",
-			.rates = SNDRV_PCM_RATE_8000_48000,
-			.formats = SNDRV_PCM_FMTBIT_S16_LE,
-			.channels_min = 1,
-			.channels_max = 4,
-			.rate_min =     8000,
-			.rate_max =     48000,
-		},
-		.capture = {
-			.stream_name = "PRI_I2S_HOSTLESS Capture",
-			.aif_name = "PRI_I2S_UL_HL",
-			.rates = SNDRV_PCM_RATE_8000_48000,
-			.formats = SNDRV_PCM_FMTBIT_S16_LE,
-			.channels_min = 1,
-			.channels_max = 2,
-			.rate_min =     8000,
-			.rate_max =    48000,
-		},
-		.ops = &msm_fe_dai_ops,
-		.name = "PRI_I2S_HOSTLESS",
-	},
-//HTC_AUD ---
 	{
 		.playback = {
 			.stream_name = "AUXPCM Hostless Playback",
@@ -422,34 +389,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VOICE_STUB",
-	},
-	{
-		.playback = {
-			.stream_name = "MI2S Hostless Playback",
-			.aif_name = "MI2S_DL_HL",
-			.rates = (SNDRV_PCM_RATE_8000 |
-				SNDRV_PCM_RATE_16000 |
-				SNDRV_PCM_RATE_48000),
-			.formats = SNDRV_PCM_FMTBIT_S16_LE,
-			.channels_min = 1,
-			.channels_max = 2,
-			.rate_min =     48000,
-			.rate_max =     8000,
-		},
-		.capture = {
-			.stream_name = "MI2S Hostless Capture",
-			.aif_name = "MI2S_UL_HL",
-			.rates = (SNDRV_PCM_RATE_8000 |
-				SNDRV_PCM_RATE_16000 |
-				SNDRV_PCM_RATE_48000),
-			.formats = SNDRV_PCM_FMTBIT_S16_LE,
-			.channels_min = 1,
-			.channels_max = 2,
-			.rate_min =     8000,
-			.rate_max =    48000,
-		},
-		.ops = &msm_fe_dai_ops,
-		.name = "MI2S_HOSTLESS",
 	},
 	{
 		.playback = {

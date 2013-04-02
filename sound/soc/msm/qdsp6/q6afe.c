@@ -21,13 +21,6 @@
 #include <sound/apr_audio.h>
 #include <sound/q6afe.h>
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 struct afe_ctl {
 	void *apr;
 	atomic_t state;
@@ -418,9 +411,6 @@ static void afe_send_cal_block(int32_t path, u16 port_id)
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (!result) {
 		pr_err("%s: wait_event timeout SET AFE CAL\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		goto done;
 	}
 
@@ -454,7 +444,7 @@ int afe_port_start(u16 port_id, union afe_port_config *afe_config,
 		ret = -EINVAL;
 		return ret;
 	}
-	pr_info("%s: %d %d\n", __func__, port_id, rate);
+	pr_debug("%s: %d %d\n", __func__, port_id, rate);
 
 	if ((port_id == RT_PROXY_DAI_001_RX) ||
 		(port_id == RT_PROXY_DAI_002_TX))
@@ -538,7 +528,6 @@ int afe_port_start(u16 port_id, union afe_port_config *afe_config,
 	if (ret < 0) {
 		pr_err("%s: AFE enable for port %d failed\n", __func__,
 				port_id);
-                BUG();
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -549,7 +538,6 @@ int afe_port_start(u16 port_id, union afe_port_config *afe_config,
 
 	if (!ret) {
 		pr_err("%s: wait_event timeout IF CONFIG\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -588,9 +576,6 @@ int afe_port_start(u16 port_id, union afe_port_config *afe_config,
 				msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout PORT START\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -619,7 +604,7 @@ int afe_open(u16 port_id, union afe_port_config *afe_config, int rate)
 		return ret;
 	}
 
-	pr_info("%s: %d %d\n", __func__, port_id, rate);
+	pr_debug("%s: %d %d\n", __func__, port_id, rate);
 
 	if ((port_id == RT_PROXY_DAI_001_RX) ||
 		(port_id == RT_PROXY_DAI_002_TX))
@@ -702,7 +687,6 @@ int afe_open(u16 port_id, union afe_port_config *afe_config, int rate)
 				msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -735,7 +719,6 @@ int afe_open(u16 port_id, union afe_port_config *afe_config, int rate)
 				msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -777,7 +760,7 @@ int afe_loopback(u16 enable, u16 dst_port, u16 src_port)
 	lb_cmd.mode = 0xFFFF;
 	lb_cmd.enable = (enable ? 1 : 0);
 	atomic_set(&this_afe.state, 1);
-        pr_info("%s: AFE loopback enable %d from src 0x%x to dst 0x%x\n", __func__,enable,src_port,dst_port);
+
 	ret = apr_send_pkt(this_afe.apr, (uint32_t *) &lb_cmd);
 	if (ret < 0) {
 		pr_err("%s: AFE loopback failed\n", __func__);
@@ -789,9 +772,6 @@ int afe_loopback(u16 enable, u16 dst_port, u16 src_port)
 				msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		ret = -EINVAL;
 	}
 done:
@@ -847,11 +827,8 @@ int afe_loopback_cfg(u16 enable, u16 dst_port, u16 src_port, u16 mode)
 	ret = wait_event_timeout(this_afe.wait,
 		(atomic_read(&this_afe.state) == 0),
 			msecs_to_jiffies(TIMEOUT_MS));
-	if (!ret) {
+	if (ret < 0) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -928,7 +905,7 @@ int afe_loopback_gain(u16 port_id, u16 volume)
 	ret = wait_event_timeout(this_afe.wait,
 		(atomic_read(&this_afe.state) == 0),
 			msecs_to_jiffies(TIMEOUT_MS));
-	if (!ret) {
+	if (ret < 0) {
 		pr_err("%s: wait_event timeout\n", __func__);
 		ret = -EINVAL;
 		goto fail_cmd;
@@ -989,11 +966,8 @@ int afe_apply_gain(u16 port_id, u16 gain)
 	ret = wait_event_timeout(this_afe.wait,
 		(atomic_read(&this_afe.state) == 0),
 			msecs_to_jiffies(TIMEOUT_MS));
-	if (!ret) {
+	if (ret < 0) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -1068,9 +1042,6 @@ int afe_start_pseudo_port(u16 port_id)
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		return -EINVAL;
 	}
 
@@ -1144,9 +1115,6 @@ int afe_stop_pseudo_port(u16 port_id)
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		return -EINVAL;
 	}
 
@@ -1197,7 +1165,6 @@ int afe_cmd_memory_map(u32 dma_addr_p, u32 dma_buf_sz)
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		return ret;
 	}
@@ -1285,7 +1252,6 @@ int afe_cmd_memory_unmap(u32 dma_addr_p)
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		return ret;
 	}
@@ -1675,11 +1641,8 @@ int afe_sidetone(u16 tx_port_id, u16 rx_port_id, u16 enable, uint16_t gain)
 	ret = wait_event_timeout(this_afe.wait,
 		(atomic_read(&this_afe.state) == 0),
 			msecs_to_jiffies(TIMEOUT_MS));
-	if (!ret) {
+	if (ret < 0) {
 		pr_err("%s: wait_event timeout\n", __func__);
-#ifdef HTC_AUD_DEBUG
-                BUG();
-#endif
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
@@ -1698,7 +1661,7 @@ int afe_port_stop_nowait(int port_id)
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
-	pr_info("%s: port_id=%d\n", __func__, port_id);
+	pr_debug("%s: port_id=%d\n", __func__, port_id);
 	port_id = afe_convert_virtual_to_portid(port_id);
 
 	stop.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -1736,7 +1699,7 @@ int afe_close(int port_id)
 		ret = -EINVAL;
 		goto fail_cmd;
 	}
-	pr_info("%s: port_id=%d\n", __func__, port_id);
+	pr_debug("%s: port_id=%d\n", __func__, port_id);
 	port_id = afe_convert_virtual_to_portid(port_id);
 
 	stop.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -1768,7 +1731,6 @@ int afe_close(int port_id)
 					msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
-                BUG();
 		ret = -EINVAL;
 		goto fail_cmd;
 	}

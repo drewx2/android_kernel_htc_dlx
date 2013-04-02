@@ -32,13 +32,6 @@
 #include "msm-pcm-q6.h"
 #include "msm-pcm-routing.h"
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 static struct audio_locks the_locks;
 
 struct snd_msm {
@@ -280,9 +273,7 @@ static int msm_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct msm_audio *prtd = runtime->private_data;
-//HTC AUD++
-	struct snd_soc_pcm_runtime *soc_prtd = substream->private_data;
-//HTC AUD--
+
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
@@ -295,12 +286,8 @@ static int msm_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 		atomic_set(&prtd->start, 0);
 		if (substream->stream != SNDRV_PCM_STREAM_PLAYBACK)
 			break;
-//HTC AUD, send EOS if beckend is opened
-		if(msm_routing_check_backend_enabled(soc_prtd->dai_link->be_id)) {
-                    pr_info("%s:end eos\n",__func__);
-		    prtd->cmd_ack = 0;
-		    q6asm_cmd_nowait(prtd->audio_client, CMD_EOS);
-                }
+		prtd->cmd_ack = 0;
+		q6asm_cmd_nowait(prtd->audio_client, CMD_EOS);
 		break;
 	case SNDRV_PCM_TRIGGER_SUSPEND:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
@@ -396,7 +383,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 				__func__, atomic_read(&prtd->out_count));
 	ret = wait_event_timeout(the_locks.write_wait,
 			(atomic_read(&prtd->out_count)), 5 * HZ);
-	if (!ret) {
+	if (ret < 0) {
 		pr_err("%s: wait_event_timeout failed\n", __func__);
 		goto fail;
 	}
@@ -447,13 +434,10 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	pr_debug("%s\n", __func__);
 
 	dir = IN;
-	if(msm_routing_check_backend_enabled(soc_prtd->dai_link->be_id)) {
-		pr_info("%s:wait eos\n",__func__);
-		ret = wait_event_timeout(the_locks.eos_wait,
+	ret = wait_event_timeout(the_locks.eos_wait,
 				prtd->cmd_ack, 5 * HZ);
-		if (!ret)
-			pr_err("%s: CMD_EOS failed\n", __func__);
-        }
+	if (ret < 0)
+		pr_err("%s: CMD_EOS failed\n", __func__);
 	q6asm_cmd(prtd->audio_client, CMD_CLOSE);
 	q6asm_audio_client_buf_free_contiguous(dir,
 				prtd->audio_client);
@@ -490,7 +474,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 
 	ret = wait_event_timeout(the_locks.read_wait,
 			(atomic_read(&prtd->in_count)), 5 * HZ);
-	if (!ret) {
+	if (ret < 0) {
 		pr_debug("%s: wait_event_timeout failed\n", __func__);
 		goto fail;
 	}
@@ -651,7 +635,7 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
 		if (params_channels(params) > 2)
 			format = FORMAT_MULTI_CHANNEL_LINEAR_PCM;
-		pr_info("%s format = :0x%x\n", __func__, format);
+		pr_debug("%s format = :0x%x\n", __func__, format);
 
 		ret = q6asm_open_read(prtd->audio_client, format);
 		if (ret < 0) {
@@ -681,7 +665,7 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 	if (buf == NULL || buf[0].data == NULL)
 		return -ENOMEM;
 
-	pr_info("%s:buf = %p\n", __func__, buf);
+	pr_debug("%s:buf = %p\n", __func__, buf);
 	dma_buf->dev.type = SNDRV_DMA_TYPE_DEV;
 	dma_buf->dev.dev = substream->pcm->card->dev;
 	dma_buf->private_data = NULL;

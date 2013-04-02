@@ -19,14 +19,8 @@
 #include <linux/mm.h>
 #include <mach/qdsp6v2/audio_acdb.h>
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
 
-#define MAX_NETWORKS		12
+#define MAX_NETWORKS		15
 
 struct sidetone_atomic_cal {
 	atomic_t	enable;

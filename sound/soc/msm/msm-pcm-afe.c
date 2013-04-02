@@ -34,13 +34,6 @@
 #include "msm-pcm-afe.h"
 #include "msm-pcm-q6.h"
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 #define MIN_PERIOD_SIZE (128 * 2)
 #define MAX_PERIOD_SIZE (128 * 2 * 2 * 6)
 static struct snd_pcm_hardware msm_afe_hardware = {

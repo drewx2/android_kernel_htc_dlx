@@ -27,13 +27,6 @@
 #include <sound/pcm_params.h>
 #include <mach/clk.h>
 
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
-
 enum {
 	STATUS_PORT_STARTED, /* track if AFE port has started */
 	STATUS_MAX
@@ -1763,12 +1756,12 @@ static struct snd_soc_dai_driver msm_dai_q6_slimbus_1_rx_dai = {
 
 static struct snd_soc_dai_driver msm_dai_q6_slimbus_1_tx_dai = {
 	.capture = {
-		.rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_48000,
+		.rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 		.channels_min = 1,
 		.channels_max = 1,
 		.rate_min = 8000,
-		.rate_max = 48000,
+		.rate_max = 16000,
 	},
 	.ops = &msm_dai_q6_ops,
 	.probe = msm_dai_q6_dai_probe,

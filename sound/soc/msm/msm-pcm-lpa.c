@@ -24,7 +24,6 @@
 #include <sound/pcm.h>
 #include <sound/initval.h>
 #include <sound/control.h>
-#include <sound/q6adm.h>
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
 #include <linux/android_pmem.h>
@@ -35,15 +34,6 @@
 
 #include "msm-pcm-q6.h"
 #include "msm-pcm-routing.h"
-
-#define Q6_EFFECT_DEBUG 0
-
-//htc audio ++
-#undef pr_info
-#undef pr_err
-#define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
-//htc audio --
 
 static struct audio_locks the_locks;
 
@@ -389,7 +379,7 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 		pr_debug("%s\n", __func__);
 		rc = wait_event_timeout(the_locks.eos_wait,
 			prtd->cmd_ack, 5 * HZ);
-		if (!rc)
+		if (rc < 0)
 			pr_err("EOS cmd timeout\n");
 		prtd->pcm_irq_pos = 0;
 	}
@@ -545,97 +535,10 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 			pr_err("%s: flush cmd failed rc=%d\n", __func__, rc);
 		rc = wait_event_timeout(the_locks.eos_wait,
 			prtd->cmd_ack, 5 * HZ);
-		if (!rc)
+		if (rc < 0)
 			pr_err("Flush cmd timeout\n");
 		prtd->pcm_irq_pos = 0;
 		break;
-	case SNDRV_PCM_IOCTL1_ENABLE_EFFECT:
-	{
-		struct param {
-			uint32_t effect_type; /* 0 for POPP, 1 for COPP */
-			uint32_t module_id;
-			uint32_t param_id;
-			uint32_t payload_size;
-		} q6_param;
-		void *payload;
-
-		pr_info("%s: SNDRV_PCM_IOCTL1_ENABLE_EFFECT\n", __func__);
-		if (copy_from_user(&q6_param, (void *) arg,
-					sizeof(q6_param))) {
-			pr_err("%s: copy param from user failed\n",
-				__func__);
-			return -EFAULT;
-		}
-
-		if (q6_param.payload_size <= 0 ||
-		    (q6_param.effect_type != 0 &&
-		     q6_param.effect_type != 1)) {
-			pr_err("%s: unsupported param: %d, 0x%x, 0x%x, %d\n",
-				__func__, q6_param.effect_type,
-				q6_param.module_id, q6_param.param_id,
-				q6_param.payload_size);
-			return -EINVAL;
-		}
-
-		payload = kzalloc(q6_param.payload_size, GFP_KERNEL);
-		if (!payload) {
-			pr_err("%s: failed to allocate memory\n",
-				__func__);
-			return -ENOMEM;
-		}
-		if (copy_from_user(payload, (void *) (arg + sizeof(q6_param)),
-			q6_param.payload_size)) {
-			pr_err("%s: copy payload from user failed\n",
-				__func__);
-			kfree(payload);
-			return -EFAULT;
-		}
-
-		if (q6_param.effect_type == 0) { /* POPP */
-			if (!prtd->audio_client) {
-				pr_debug("%s: audio_client not found\n",
-					__func__);
-				kfree(payload);
-				return -EACCES;
-			}
-			rc = q6asm_enable_effect(prtd->audio_client,
-						q6_param.module_id,
-						q6_param.param_id,
-						q6_param.payload_size,
-						payload);
-			pr_info("%s: call q6asm_enable_effect, rc %d\n",
-				__func__, rc);
-		} else { /* COPP */
-			int port_id = msm_pcm_routing_get_port(substream);
-			int index = afe_get_port_index(port_id);
-			pr_info("%s: use copp topology, port id %d, index %d\n",
-				__func__, port_id, index);
-			if (port_id < 0) {
-				pr_err("%s: invalid port_id %d\n",
-					__func__, port_id);
-			} else {
-				rc = q6adm_enable_effect(index,
-						     q6_param.module_id,
-						     q6_param.param_id,
-						     q6_param.payload_size,
-						     payload);
-				pr_info("%s: call q6adm_enable_effect, rc %d\n",
-					__func__, rc);
-			}
-		}
-#if Q6_EFFECT_DEBUG
-		{
-			int *ptr;
-			int i;
-			ptr = (int *)payload;
-			for (i = 0; i < (q6_param.payload_size / 4); i++)
-				pr_aud_info("0x%08x", *(ptr + i));
-		}
-#endif
-		kfree(payload);
-		return rc;
-	}
-
 	default:
 		break;
 	}
